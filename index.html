@@ -38,16 +38,16 @@
   </div>
 
   <div class="card">
-    <h1>Resultados</h1>
-    <p class="sub" id="info">Cargando…</p>
-    <div id="ranking"></div>
-  </div>
+  <p class="sub" id="info">Cargando…</p>
+  <div id="ranking"></div>
+  <button id="ver" style="background:transparent;color:var(--muted);border:1px solid var(--border)">Ver resultados (admin)</button>
+</div>
 </main>
 
 <script>
 // ====== CONFIGURA ESTO ======
-const URL_SCRIPT = "PEGA_AQUI_LA_URL_DE_TU_APPS_SCRIPT";
-const OPCIONES = ["Opción A", "Opción B", "Opción C", "Opción D", "Opción E", "Opción F", "Opción G"];
+const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbzHAwZEOG4xwUqxFohuTuFGPnZpOFu1kzjB1jFevwLDq4jJcARPFegeT-F54_oEpsKByw/exec";
+const OPCIONES = ["Truher", "Abraham", "Leo", "Alan", "Recojizz", "Blaster", "Gael", "Causa", "Cesar", "Mike", "Manu", "Ranzaad", "Suny", "Tenochis", "Kitty", "Guakmole", "Eto", "Rodri", "Kkita Ck"];
 // ============================
 
 const PUNTOS = [5, 4, 3, 2, 1];
@@ -86,6 +86,7 @@ function msg(texto, clase) { $("msg").textContent = texto; $("msg").className = 
 function pintar(d) {
   $("info").textContent = `${d.participantes} de ${d.max} participantes han votado`;
   $("ranking").innerHTML = "";
+  if (!d.ranking) return;
   d.ranking.forEach((r, i) => {
     const div = document.createElement("div");
     div.className = "row";
@@ -95,6 +96,16 @@ function pintar(d) {
   });
   if (!d.ranking.length) $("ranking").textContent = "Aún no hay votos.";
 }
+
+$("ver").addEventListener("click", async () => {
+  const clave = prompt("Clave de administrador:");
+  if (!clave) return;
+  try {
+    const r = await fetch(URL_SCRIPT + "?clave=" + encodeURIComponent(clave));
+    const d = await r.json();
+    if (d.ok) pintar(d); else alert(d.error);
+  } catch { alert("Error de conexión."); }
+});
 
 async function cargar() {
   try {

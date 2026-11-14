@@ -40,7 +40,7 @@
   <div class="card">
   <p class="sub" id="info">Cargando…</p>
   <div id="ranking"></div>
-  <button id="ver" style="background:transparent;color:var(--muted);border:1px solid var(--border)">Ver resultados (admin)</button>
+  <button id="ver" style="display:none;background:transparent;color:var(--muted);border:1px solid var(--border)">Ver resultados (admin)</button>
 </div>
 </main>
 
@@ -96,7 +96,7 @@ function pintar(d) {
   });
   if (!d.ranking.length) $("ranking").textContent = "Aún no hay votos.";
 }
-
+if (location.hash === "#admin") $("ver").style.display = "block";
 $("ver").addEventListener("click", async () => {
   const clave = prompt("Clave de administrador:");
   if (!clave) return;

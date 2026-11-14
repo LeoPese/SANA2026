@@ -37,7 +37,7 @@
     <div id="msg"></div>
   </div>
 
-  <div class="card" style="display:none;">
+  <div class="card" id="resultados" style="display:none;">
   <p class="sub" id="info">Cargando…</p>
   <div id="ranking"></div>
   <button id="ver" style="display:none;background:transparent;color:var(--muted);border:1px solid var(--border)">Ver resultados (admin)</button>
@@ -49,6 +49,7 @@
 const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbzHAwZEOG4xwUqxFohuTuFGPnZpOFu1kzjB1jFevwLDq4jJcARPFegeT-F54_oEpsKByw/exec";
 const OPCIONES = ["Truher", "Abraham", "Leo", "Alan", "Recojizz", "Blaster", "Gael", "Causa", "Cesar", "Mike", "Manu", "Ranzaad", "Suny", "Tenochis", "Kitty", "Guakmole", "Eto", "Rodri", "Kkita Ck"];
 // ============================
+
 
 const PUNTOS = [5, 4, 3, 2, 1];
 const $ = id => document.getElementById(id);
@@ -63,6 +64,27 @@ PUNTOS.forEach(p => {
   selects.push(sel);
   $("selects").append(lab, sel);
 });
+
+var getUrlParameter = function getUrlParameter(sParam) {
+    var sPageURL = window.location.search.substring(1),
+        sURLVariables = sPageURL.split('&'),
+        sParameterName,
+        i;
+
+    for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i].split('=');
+
+        if (sParameterName[0] === sParam) {
+            return sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
+        }
+    }
+    return false;
+};
+
+console.log(getUrlParameter('admin'));
+if(getUrlParameter('admin') == "leo") {
+  document.getElementById("resultados").style.display = "block";
+}
 
 function refrescar() {
   const usadas = selects.map(s => s.value).filter(Boolean);

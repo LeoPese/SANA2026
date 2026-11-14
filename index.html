@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Votación</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --text:#1c1e21; --muted:#667; --accent:#2563eb; --border:#d8dce3; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14161a; --card:#1e2127; --text:#eceef1; --muted:#9aa3b2; --accent:#6ea0ff; --border:#343944; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--text); padding:16px; }
+  main { max-width:520px; margin:0 auto; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; margin-bottom:16px; }
+  h1 { font-size:1.4rem; margin:0 0 4px; }
+  p.sub { color:var(--muted); margin:0 0 14px; font-size:.9rem; }
+  label { display:block; font-weight:600; margin:12px 0 4px; font-size:.9rem; }
+  input, select { width:100%; padding:10px; font-size:1rem; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); }
+  button { width:100%; margin-top:18px; padding:12px; font-size:1rem; font-weight:600; border:0; border-radius:8px; background:var(--accent); color:#fff; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:default; }
+  #msg { margin-top:12px; font-size:.9rem; min-height:1.2em; }
+  .err { color:#d33; } .ok { color:#1a8f4a; }
+  .row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); }
+  .row:last-child { border-bottom:0; }
+</style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <h1>Vota por tus 5 favoritos</h1>
+    <p class="sub">Elige una opción distinta para cada puntaje (5 puntos al más favorito, 1 al menos).</p>
+    <label for="nombre">Tu nombre</label>
+    <input id="nombre" maxlength="40" placeholder="Nombre y apellido" autocomplete="off">
+    <div id="selects"></div>
+    <button id="enviar">Enviar votos</button>
+    <div id="msg"></div>
+  </div>
+
+  <div class="card">
+    <h1>Resultados</h1>
+    <p class="sub" id="info">Cargando…</p>
+    <div id="ranking"></div>
+  </div>
+</main>
+
+<script>
+// ====== CONFIGURA ESTO ======
+const URL_SCRIPT = "PEGA_AQUI_LA_URL_DE_TU_APPS_SCRIPT";
+const OPCIONES = ["Opción A", "Opción B", "Opción C", "Opción D", "Opción E", "Opción F", "Opción G"];
+// ============================
+
+const PUNTOS = [5, 4, 3, 2, 1];
+const $ = id => document.getElementById(id);
+const selects = [];
+
+PUNTOS.forEach(p => {
+  const lab = document.createElement("label");
+  lab.textContent = p + (p === 1 ? " punto" : " puntos");
+  const sel = document.createElement("select");
+  sel.dataset.puntos = p;
+  sel.addEventListener("change", refrescar);
+  selects.push(sel);
+  $("selects").append(lab, sel);
+});
+
+function refrescar() {
+  const usadas = selects.map(s => s.value).filter(Boolean);
+  selects.forEach(s => {
+    const actual = s.value;
+    s.innerHTML = '<option value="">— elige —</option>';
+    OPCIONES.forEach(o => {
+      if (o === actual || !usadas.includes(o)) {
+        const op = document.createElement("option");
+        op.value = op.textContent = o;
+        if (o === actual) op.selected = true;
+        s.append(op);
+      }
+    });
+  });
+}
+refrescar();
+
+function msg(texto, clase) { $("msg").textContent = texto; $("msg").className = clase || ""; }
+
+function pintar(d) {
+  $("info").textContent = `${d.participantes} de ${d.max} participantes han votado`;
+  $("ranking").innerHTML = "";
+  d.ranking.forEach((r, i) => {
+    const div = document.createElement("div");
+    div.className = "row";
+    div.innerHTML = `<span>${i + 1}. </span><span style="flex:1;margin-left:6px"></span><strong>${r.puntos}</strong>`;
+    div.children[1].textContent = r.opcion;
+    $("ranking").append(div);
+  });
+  if (!d.ranking.length) $("ranking").textContent = "Aún no hay votos.";
+}
+
+async function cargar() {
+  try {
+    const r = await fetch(URL_SCRIPT);
+    pintar(await r.json());
+  } catch { $("info").textContent = "No se pudieron cargar los resultados."; }
+}
+
+$("enviar").addEventListener("click", async () => {
+  const nombre = $("nombre").value.trim();
+  if (!nombre) return msg("Escribe tu nombre.", "err");
+  if (selects.some(s => !s.value)) return msg("Completa los 5 votos.", "err");
+
+  const votos = selects.map(s => ({ opcion: s.value, puntos: Number(s.dataset.puntos) }));
+  $("enviar").disabled = true;
+  msg("Enviando…");
+  try {
+    const r = await fetch(URL_SCRIPT, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" }, // evita preflight CORS
+      body: JSON.stringify({ nombre, votos })
+    });
+    const d = await r.json();
+    if (d.ok) { msg("¡Votos guardados, gracias!", "ok"); pintar(d); }
+    else { msg(d.error, "err"); $("enviar").disabled = false; }
+  } catch {
+    msg("Error de conexión, intenta de nuevo.", "err");
+    $("enviar").disabled = false;
+  }
+});
+
+cargar();
+</script>
+</body>
+</html>
